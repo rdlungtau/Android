@@ -1,0 +1,13 @@
+<resources>
+    <string name="app_name">Saiphai Auto</string>
+    <string name="association_title">SAIPHAI AUTO DRIVER ASSOCIATION</string>
+    <string name="association_subtitle">ESTD : 2020 • Official Ticket &amp; Fare App</string>
+    <string name="sign_in_google">Sign in with Google</string>
+    <string name="sign_out">Sign Out</string>
+    <string name="rate_per_km_badge">Standard Rate: Rs 50 / km</string>
+    <string name="share_ticket_title">Share Saiphai Auto Ticket</string>
+    <string name="logo_content_desc">Saiphai Auto Driver Association Official Emblem</string>
+    <string name="call_driver_desc">Call Driver</string>
+    <string name="share_ticket_desc">Share Ticket</string>
+    <string name="switch_language_desc">Switch Language Mizo or English</string>
+</resources>

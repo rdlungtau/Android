@@ -1,0 +1,286 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global default-deny safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Primitive helpers
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
+        ('email' in request.auth.token &&
+         request.auth.token.email == 'Ramdintluong@gmail.com' &&
+         'email_verified' in request.auth.token &&
+         request.auth.token.email_verified == true)
+      );
+    }
+
+    function isNumberInRange(val, minVal, maxVal) {
+      return (val is int || val is float) && val >= minVal && val <= maxVal;
+    }
+
+    // 1. FareRoute Validation Helper
+    function isValidFareRoute(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.fromLocation is string && data.fromLocation.size() >= 1 && data.fromLocation.size() <= 100 &&
+             data.toLocation is string && data.toLocation.size() >= 1 && data.toLocation.size() <= 100 &&
+             isNumberInRange(data.distanceKm, 0, 1000) &&
+             data.fareAmount is int && data.fareAmount >= 10 && data.fareAmount <= 100000 &&
+             data.routeType is string && data.routeType in ['local', 'inter_village', 'highway', 'special'] &&
+             data.notes is string && data.notes.size() <= 300 &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    // 2. DriverProfile Validation Helper
+    function isValidDriverProfile(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.name is string && data.name.size() >= 1 && data.name.size() <= 100 &&
+             data.regNo is string && data.regNo.size() >= 1 && data.regNo.size() <= 30 &&
+             data.contactPhone is string && data.contactPhone.size() >= 3 && data.contactPhone.size() <= 25 &&
+             data.standName is string && data.standName.size() >= 1 && data.standName.size() <= 100 &&
+             data.vehicleModel is string && data.vehicleModel.size() >= 1 && data.vehicleModel.size() <= 80 &&
+             data.status is string && data.status in ['available', 'on_trip', 'offline'] &&
+             isNumberInRange(data.ratingAvg, 0, 5) &&
+             data.totalTrips is int && data.totalTrips >= 0 && data.totalTrips <= 1000000 &&
+             isNumberInRange(data.currentLat, -90, 90) &&
+             isNumberInRange(data.currentLng, -180, 180) &&
+             data.isVerified is bool &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    // 3. BookingTicket Validation Helper
+    function isValidBookingTicket(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.ticketCode is string && data.ticketCode.size() >= 3 && data.ticketCode.size() <= 40 &&
+             data.passengerName is string && data.passengerName.size() >= 1 && data.passengerName.size() <= 100 &&
+             data.passengerPhone is string && data.passengerPhone.size() >= 3 && data.passengerPhone.size() <= 25 &&
+             data.driverId is string && data.driverId.size() >= 1 && data.driverId.size() <= 128 &&
+             data.driverName is string && data.driverName.size() >= 1 && data.driverName.size() <= 100 &&
+             data.driverRegNo is string && data.driverRegNo.size() >= 1 && data.driverRegNo.size() <= 30 &&
+             data.driverPhone is string && data.driverPhone.size() >= 3 && data.driverPhone.size() <= 25 &&
+             data.pickupName is string && data.pickupName.size() >= 1 && data.pickupName.size() <= 120 &&
+             data.dropoffName is string && data.dropoffName.size() >= 1 && data.dropoffName.size() <= 120 &&
+             isNumberInRange(data.pickupLat, -90, 90) &&
+             isNumberInRange(data.pickupLng, -180, 180) &&
+             isNumberInRange(data.dropoffLat, -90, 90) &&
+             isNumberInRange(data.dropoffLng, -180, 180) &&
+             isNumberInRange(data.distanceKm, 0.1, 1000) &&
+             data.fareAmount is int && data.fareAmount >= 10 && data.fareAmount <= 100000 &&
+             data.paymentMode is string && data.paymentMode in ['cash', 'online_upi', 'online_card'] &&
+             data.paymentStatus is string && data.paymentStatus in ['pending', 'paid', 'refunded'] &&
+             data.status is string && data.status in ['booked', 'driver_assigned', 'arriving', 'in_progress', 'completed', 'cancelled'] &&
+             data.otpPin is string && data.otpPin.size() == 4 && data.otpPin.matches('^[0-9]{4}$') &&
+             isNumberInRange(data.driverProgress, 0, 1) &&
+             data.passengerRated is bool &&
+             data.driverRated is bool &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    // 4. RideReview Validation Helper
+    function isValidRideReview(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.bookingId is string && data.bookingId.size() >= 1 && data.bookingId.size() <= 128 &&
+             data.targetId is string && data.targetId.size() >= 1 && data.targetId.size() <= 128 &&
+             data.targetName is string && data.targetName.size() >= 1 && data.targetName.size() <= 100 &&
+             data.targetRole is string && data.targetRole in ['driver', 'passenger'] &&
+             data.reviewerName is string && data.reviewerName.size() >= 1 && data.reviewerName.size() <= 100 &&
+             data.rating is int && data.rating >= 1 && data.rating <= 5 &&
+             data.comment is string && data.comment.size() <= 500 &&
+             data.routeSummary is string && data.routeSummary.size() >= 1 && data.routeSummary.size() <= 150 &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    // Admins lookup collection (read-only for self/admin, no client writes)
+    match /admins/{adminId} {
+      allow get: if isSignedIn() && isValidId(adminId) && (request.auth.uid == adminId || isAdmin());
+      allow list, create, update, delete: if false;
+    }
+
+    // Fares Collection
+    match /fares/{fareId} {
+      allow get: if isSignedIn() && isValidId(fareId) && (existing().userId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (existing().userId == request.auth.uid || isAdmin());
+
+      allow create: if isSignedIn() &&
+                       isValidId(fareId) &&
+                       incoming().userId == request.auth.uid &&
+                       incoming().keys().hasAll([
+                         'userId', 'fromLocation', 'toLocation', 'distanceKm',
+                         'fareAmount', 'routeType', 'notes', 'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'userId', 'fromLocation', 'toLocation', 'distanceKm',
+                         'fareAmount', 'routeType', 'notes', 'createdAt', 'updatedAt'
+                       ]) &&
+                       isValidFareRoute(incoming());
+
+      allow update: if isSignedIn() &&
+                       isValidId(fareId) &&
+                       isValidFareRoute(incoming()) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       (existing().userId == request.auth.uid || isAdmin()) &&
+                       incoming().diff(existing()).affectedKeys().hasOnly([
+                         'fromLocation', 'toLocation', 'distanceKm',
+                         'fareAmount', 'routeType', 'notes', 'updatedAt'
+                       ]);
+
+      allow delete: if isSignedIn() && isValidId(fareId) && (existing().userId == request.auth.uid || isAdmin());
+    }
+
+    // Drivers Collection
+    match /drivers/{driverId} {
+      allow get: if isSignedIn() && isValidId(driverId) && (existing().userId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (existing().userId == request.auth.uid || isAdmin());
+
+      allow create: if isSignedIn() &&
+                       isValidId(driverId) &&
+                       incoming().userId == request.auth.uid &&
+                       incoming().keys().hasAll([
+                         'userId', 'name', 'regNo', 'contactPhone', 'standName',
+                         'vehicleModel', 'status', 'ratingAvg', 'totalTrips',
+                         'currentLat', 'currentLng', 'isVerified', 'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'userId', 'name', 'regNo', 'contactPhone', 'standName',
+                         'vehicleModel', 'status', 'ratingAvg', 'totalTrips',
+                         'currentLat', 'currentLng', 'isVerified', 'createdAt', 'updatedAt'
+                       ]) &&
+                       isValidDriverProfile(incoming());
+
+      allow update: if isSignedIn() &&
+                       isValidId(driverId) &&
+                       isValidDriverProfile(incoming()) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       (existing().userId == request.auth.uid || isAdmin()) &&
+                       incoming().diff(existing()).affectedKeys().hasOnly([
+                         'name', 'regNo', 'contactPhone', 'standName',
+                         'vehicleModel', 'status', 'ratingAvg', 'totalTrips',
+                         'currentLat', 'currentLng', 'isVerified', 'updatedAt'
+                       ]);
+
+      allow delete: if isSignedIn() && isValidId(driverId) && (existing().userId == request.auth.uid || isAdmin());
+    }
+
+    // Bookings Collection
+    match /bookings/{bookingId} {
+      allow get: if isSignedIn() && isValidId(bookingId) && (existing().userId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (existing().userId == request.auth.uid || isAdmin());
+
+      allow create: if isSignedIn() &&
+                       isValidId(bookingId) &&
+                       incoming().userId == request.auth.uid &&
+                       incoming().keys().hasAll([
+                         'userId', 'ticketCode', 'passengerName', 'passengerPhone',
+                         'driverId', 'driverName', 'driverRegNo', 'driverPhone',
+                         'pickupName', 'dropoffName', 'pickupLat', 'pickupLng',
+                         'dropoffLat', 'dropoffLng', 'distanceKm', 'fareAmount',
+                         'paymentMode', 'paymentStatus', 'status', 'otpPin',
+                         'driverProgress', 'passengerRated', 'driverRated',
+                         'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'userId', 'ticketCode', 'passengerName', 'passengerPhone',
+                         'driverId', 'driverName', 'driverRegNo', 'driverPhone',
+                         'pickupName', 'dropoffName', 'pickupLat', 'pickupLng',
+                         'dropoffLat', 'dropoffLng', 'distanceKm', 'fareAmount',
+                         'paymentMode', 'paymentStatus', 'status', 'otpPin',
+                         'driverProgress', 'passengerRated', 'driverRated',
+                         'createdAt', 'updatedAt'
+                       ]) &&
+                       isValidBookingTicket(incoming());
+
+      allow update: if isSignedIn() &&
+                       isValidId(bookingId) &&
+                       isValidBookingTicket(incoming()) &&
+                       incoming().userId == existing().userId &&
+                       incoming().ticketCode == existing().ticketCode &&
+                       incoming().otpPin == existing().otpPin &&
+                       incoming().createdAt == existing().createdAt &&
+                       (existing().userId == request.auth.uid || isAdmin()) && (
+                         // Action 1: Active Ride Progression / Dispatch Update (non-terminal states)
+                         (existing().status in ['booked', 'driver_assigned', 'arriving', 'in_progress'] &&
+                          incoming().diff(existing()).affectedKeys().hasOnly([
+                            'driverId', 'driverName', 'driverRegNo', 'driverPhone',
+                            'paymentMode', 'paymentStatus', 'status', 'driverProgress',
+                            'passengerRated', 'driverRated', 'updatedAt'
+                          ])) ||
+                         // Action 2: Post-Completion Rating / Settlement Update (terminal completed state locked)
+                         (existing().status == 'completed' &&
+                          incoming().status == 'completed' &&
+                          incoming().diff(existing()).affectedKeys().hasOnly([
+                            'paymentStatus', 'passengerRated', 'driverRated', 'updatedAt'
+                          ])) ||
+                         // Action 3: Admin Override
+                         (isAdmin() &&
+                          incoming().diff(existing()).affectedKeys().hasOnly([
+                            'driverId', 'driverName', 'driverRegNo', 'driverPhone',
+                            'paymentMode', 'paymentStatus', 'status', 'driverProgress',
+                            'passengerRated', 'driverRated', 'updatedAt'
+                          ]))
+                       );
+
+      allow delete: if isSignedIn() && isValidId(bookingId) && (existing().userId == request.auth.uid || isAdmin());
+    }
+
+    // Reviews Collection
+    match /reviews/{reviewId} {
+      allow get: if isSignedIn() && isValidId(reviewId) && (existing().userId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (existing().userId == request.auth.uid || isAdmin());
+
+      allow create: if isSignedIn() &&
+                       isValidId(reviewId) &&
+                       incoming().userId == request.auth.uid &&
+                       incoming().keys().hasAll([
+                         'userId', 'bookingId', 'targetId', 'targetName',
+                         'targetRole', 'reviewerName', 'rating', 'comment',
+                         'routeSummary', 'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'userId', 'bookingId', 'targetId', 'targetName',
+                         'targetRole', 'reviewerName', 'rating', 'comment',
+                         'routeSummary', 'createdAt', 'updatedAt'
+                       ]) &&
+                       isValidRideReview(incoming());
+
+      allow update: if isSignedIn() &&
+                       isValidId(reviewId) &&
+                       isValidRideReview(incoming()) &&
+                       incoming().userId == existing().userId &&
+                       incoming().bookingId == existing().bookingId &&
+                       incoming().targetId == existing().targetId &&
+                       incoming().targetRole == existing().targetRole &&
+                       incoming().createdAt == existing().createdAt &&
+                       (existing().userId == request.auth.uid || isAdmin()) &&
+                       incoming().diff(existing()).affectedKeys().hasOnly([
+                         'rating', 'comment', 'updatedAt'
+                       ]);
+
+      allow delete: if isSignedIn() && isValidId(reviewId) && (existing().userId == request.auth.uid || isAdmin());
+    }
+  }
+}

@@ -1,0 +1,375 @@
+{
+  "entities": {
+    "FareRoute": {
+      "title": "FareRoute",
+      "description": "Official route fare entry for Saiphai Auto Driver Association.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "UID of the authenticated user who owns/seeded this fare entry."
+        },
+        "fromLocation": {
+          "type": "string",
+          "description": "Starting location name (e.g., Saiphai)."
+        },
+        "toLocation": {
+          "type": "string",
+          "description": "Destination location name (e.g., Saiphai Khawchhung, N.Chawnpui)."
+        },
+        "distanceKm": {
+          "type": "number",
+          "description": "Approximate route distance in kilometers."
+        },
+        "fareAmount": {
+          "type": "integer",
+          "description": "Fare in INR (Rs)."
+        },
+        "routeType": {
+          "type": "string",
+          "enum": ["local", "inter_village", "highway", "special"],
+          "description": "Category of the route."
+        },
+        "notes": {
+          "type": "string",
+          "description": "Additional route notes or Mizo instructions."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when created via FieldValue.serverTimestamp()."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when last updated via FieldValue.serverTimestamp()."
+        }
+      },
+      "required": [
+        "userId",
+        "fromLocation",
+        "toLocation",
+        "distanceKm",
+        "fareAmount",
+        "routeType",
+        "notes",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "DriverProfile": {
+      "title": "DriverProfile",
+      "description": "Registered auto rickshaw driver in the Saiphai Auto Driver Association.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "UID of the authenticated user managing/viewing this driver directory entry."
+        },
+        "name": {
+          "type": "string",
+          "description": "Full name of the driver."
+        },
+        "regNo": {
+          "type": "string",
+          "description": "Vehicle registration number (e.g., MZ-05-A-1421)."
+        },
+        "contactPhone": {
+          "type": "string",
+          "description": "Driver dispatch contact phone number."
+        },
+        "standName": {
+          "type": "string",
+          "description": "Designated auto stand in Saiphai."
+        },
+        "vehicleModel": {
+          "type": "string",
+          "description": "Auto rickshaw model description."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["available", "on_trip", "offline"],
+          "description": "Current duty availability status."
+        },
+        "ratingAvg": {
+          "type": "number",
+          "description": "Average star rating from 0.0 to 5.0."
+        },
+        "totalTrips": {
+          "type": "integer",
+          "description": "Total completed rides count."
+        },
+        "currentLat": {
+          "type": "number",
+          "description": "Current latitude for live tracking."
+        },
+        "currentLng": {
+          "type": "number",
+          "description": "Current longitude for live tracking."
+        },
+        "isVerified": {
+          "type": "boolean",
+          "description": "Whether the driver is verified by Saiphai Auto Driver Association."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when created via FieldValue.serverTimestamp()."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when updated via FieldValue.serverTimestamp()."
+        }
+      },
+      "required": [
+        "userId",
+        "name",
+        "regNo",
+        "contactPhone",
+        "standName",
+        "vehicleModel",
+        "status",
+        "ratingAvg",
+        "totalTrips",
+        "currentLat",
+        "currentLng",
+        "isVerified",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "BookingTicket": {
+      "title": "BookingTicket",
+      "description": "Auto ticket booking with GPS coordinates, Rs 50/km calculation, OTP verification PIN, and live tracking state.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "UID of the authenticated user who created the booking."
+        },
+        "ticketCode": {
+          "type": "string",
+          "description": "Human-readable ticket reference code (e.g., SPH-8421)."
+        },
+        "passengerName": {
+          "type": "string",
+          "description": "Name of the passenger."
+        },
+        "passengerPhone": {
+          "type": "string",
+          "description": "Contact number of the passenger."
+        },
+        "driverId": {
+          "type": "string",
+          "description": "Assigned driver document ID."
+        },
+        "driverName": {
+          "type": "string",
+          "description": "Assigned driver name."
+        },
+        "driverRegNo": {
+          "type": "string",
+          "description": "Assigned auto registration number."
+        },
+        "driverPhone": {
+          "type": "string",
+          "description": "Assigned driver contact number."
+        },
+        "pickupName": {
+          "type": "string",
+          "description": "Pickup location label."
+        },
+        "dropoffName": {
+          "type": "string",
+          "description": "Destination location label."
+        },
+        "pickupLat": {
+          "type": "number",
+          "description": "Pickup latitude."
+        },
+        "pickupLng": {
+          "type": "number",
+          "description": "Pickup longitude."
+        },
+        "dropoffLat": {
+          "type": "number",
+          "description": "Destination latitude."
+        },
+        "dropoffLng": {
+          "type": "number",
+          "description": "Destination longitude."
+        },
+        "distanceKm": {
+          "type": "number",
+          "description": "Calculated route distance in kilometers."
+        },
+        "fareAmount": {
+          "type": "integer",
+          "description": "Calculated or fixed fare in INR (Rs 50/km)."
+        },
+        "paymentMode": {
+          "type": "string",
+          "enum": ["cash", "online_upi", "online_card"],
+          "description": "Selected payment method."
+        },
+        "paymentStatus": {
+          "type": "string",
+          "enum": ["pending", "paid", "refunded"],
+          "description": "Current payment settlement status."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["booked", "driver_assigned", "arriving", "in_progress", "completed", "cancelled"],
+          "description": "Live ride lifecycle status."
+        },
+        "otpPin": {
+          "type": "string",
+          "description": "4-digit OTP code for secure ride start verification."
+        },
+        "driverProgress": {
+          "type": "number",
+          "description": "Normalized progress (0.0 to 1.0) of the driver along the route."
+        },
+        "passengerRated": {
+          "type": "boolean",
+          "description": "Whether the passenger has rated the driver for this ride."
+        },
+        "driverRated": {
+          "type": "boolean",
+          "description": "Whether the driver has rated the passenger for this ride."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when created via FieldValue.serverTimestamp()."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when updated via FieldValue.serverTimestamp()."
+        }
+      },
+      "required": [
+        "userId",
+        "ticketCode",
+        "passengerName",
+        "passengerPhone",
+        "driverId",
+        "driverName",
+        "driverRegNo",
+        "driverPhone",
+        "pickupName",
+        "dropoffName",
+        "pickupLat",
+        "pickupLng",
+        "dropoffLat",
+        "dropoffLng",
+        "distanceKm",
+        "fareAmount",
+        "paymentMode",
+        "paymentStatus",
+        "status",
+        "otpPin",
+        "driverProgress",
+        "passengerRated",
+        "driverRated",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "RideReview": {
+      "title": "RideReview",
+      "description": "Two-way rating and review record for drivers and passengers.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "UID of the authenticated user who submitted the review."
+        },
+        "bookingId": {
+          "type": "string",
+          "description": "Associated booking ticket ID."
+        },
+        "targetId": {
+          "type": "string",
+          "description": "ID of the driver or passenger being reviewed."
+        },
+        "targetName": {
+          "type": "string",
+          "description": "Display name of the driver or passenger being reviewed."
+        },
+        "targetRole": {
+          "type": "string",
+          "enum": ["driver", "passenger"],
+          "description": "Whether this review rates a driver or a passenger."
+        },
+        "reviewerName": {
+          "type": "string",
+          "description": "Name of the reviewer."
+        },
+        "rating": {
+          "type": "integer",
+          "description": "Star rating from 1 to 5."
+        },
+        "comment": {
+          "type": "string",
+          "description": "Written feedback comment."
+        },
+        "routeSummary": {
+          "type": "string",
+          "description": "Route summary for context (e.g., Saiphai -> N.Chawnpui)."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when created via FieldValue.serverTimestamp()."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when updated via FieldValue.serverTimestamp()."
+        }
+      },
+      "required": [
+        "userId",
+        "bookingId",
+        "targetId",
+        "targetName",
+        "targetRole",
+        "reviewerName",
+        "rating",
+        "comment",
+        "routeSummary",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/fares/{fareId}": {
+      "schema": {
+        "$ref": "#/entities/FareRoute"
+      },
+      "description": "Collection of official and custom Saiphai Auto fare routes."
+    },
+    "/drivers/{driverId}": {
+      "schema": {
+        "$ref": "#/entities/DriverProfile"
+      },
+      "description": "Collection of registered Saiphai Auto drivers and their live status/locations."
+    },
+    "/bookings/{bookingId}": {
+      "schema": {
+        "$ref": "#/entities/BookingTicket"
+      },
+      "description": "Collection of passenger auto ticket bookings and live ride tracking states."
+    },
+    "/reviews/{reviewId}": {
+      "schema": {
+        "$ref": "#/entities/RideReview"
+      },
+      "description": "Collection of driver and passenger ratings and reviews."
+    }
+  }
+}
